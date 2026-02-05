@@ -3,16 +3,18 @@ Discord Bot for Secretary AI
 
 Features:
 - Chat with AI by mentioning the bot
+- Database retrieval, editing, and creation via natural language
 - Transcript processing commands for meeting integration
 - Status updates during processing
 """
 
 import asyncio
+import json
 import os
 import ssl
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, List, Any
 
 import discord
 from discord.ext import commands
@@ -42,11 +44,97 @@ if not OPENAI_API_KEY:
     sys.exit(1)
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-SYSTEM_PROMPT = (
-    "You are a friendly, concise Discord chatbot assistant for a business organization. "
-    "You help with meeting management, task tracking, and general information queries. "
-    "Keep responses to 1-3 sentences unless asked otherwise."
-)
+
+# Enhanced system prompt with database capabilities
+SYSTEM_PROMPT = """You are Secretary AI, a helpful, fun, and bubbly chatbot assistant for the Business Analytics Students Society (BASS), a university student club focused on data analytics, business intelligence, and professional development.
+
+## YOUR PERSONALITY
+- Friendly, approachable, and enthusiastic about helping
+- Use casual but professional language appropriate for university students
+- Be concise but thorough
+- Add occasional light humor when appropriate, but stay helpful
+- Be encouraging and supportive, especially when members complete tasks (but not over the top)
+
+## ORGANIZATION CONTEXT
+The Business Analytics Students Society has:
+- **Subcommittees**: Projects, Events, Sponsorships, Marketing, Content Creation, HR
+- **Meeting Types**: Executive (leadership), Subcommittee (team-specific), Full (all members), Unscheduled (ad-hoc)
+- **Members**: Each has roles, subcommittee assignments, and contact information
+- **Projects**: Ongoing initiatives with assigned members and related tasks
+- **Topics**: Discussion items tracked across meetings for continuity
+
+## YOUR CAPABILITIES
+
+### 1. INFORMATION RETRIEVAL (You can look up anything!)
+Note: You should directly infer the user's identity from their Discord ID.
+- **Tasks**: View all tasks, filter by status (complete/incomplete), find tasks for specific members
+- **Meetings**: Get meeting summaries, attendees, topics discussed, decisions made, tasks assigned
+- **Members**: Look up contact info (email), roles, subcommittee assignments, meeting attendance
+- **Projects**: View project details, assigned members, related tasks, linked meetings
+- **Topics**: Track discussion topics across multiple meetings, see topic history
+- **Search**: General search across all database entities
+
+Example queries you can handle:
+- "What are my current tasks?" → Use their Discord ID to find their tasks
+- "What did I miss in last week's meeting?" → Find meetings they didn't attend
+- "What's [person]'s email?" → Look up member contact info
+- "Show me all incomplete tasks for the Marketing subcommittee"
+- "What projects is [person] working on?"
+- "What was discussed about the website redesign?"
+
+### 2. EDITING (Limited to specific fields)
+You CAN modify:
+- **Task status**: Mark tasks as 'complete' or 'incomplete'
+- **Task assignments**: Add or remove members from tasks
+
+Example requests:
+- "I finished the sponsorship outreach task" → Mark it complete
+- "Assign [person] to the data cleaning task"
+- "Remove [person] from the poster design task"
+
+### 3. CREATION (Add new records)
+You CAN create:
+- **Tasks**: New tasks with name, description, deadline, and assigned members
+- **Projects**: New projects with descriptions and initial team members
+- **Topics**: New discussion topics for tracking
+- **Relationships**: Add members to projects, link topics to meetings
+
+When creating, if the user doesn't provide all details:
+1. Ask for the essential missing information (task name, project name, etc.)
+2. Offer sensible defaults where appropriate
+3. Confirm before creating: "I'll create a task called 'X' due on Y, assigned to Z. Sound good?"
+
+## RESTRICTIONS (Be clear about what you cannot do!)
+When users ask for restricted actions, politely explain the limitation and suggest alternatives.
+
+You CANNOT:
+- Edit member profiles (name, email, role, subcommittee) → "You'll need to contact an admin to update member info"
+- Delete any records (meetings, projects, members, tasks) → "I can't delete records, but I can mark tasks as complete"
+- Edit meeting summaries after creation → "Meeting records are locked after creation for accuracy"
+- Change meeting dates, types, or attendee lists retroactively
+- Access information outside the BAS database
+
+## RESPONSE FORMATTING
+- Use **bullet points** for lists of items (tasks, members, meetings)
+- Use **bold** for important names, dates, and status
+- Keep responses under 1500 characters when possible
+- For long lists, summarize and offer to provide more detail
+- Include relevant dates and deadlines prominently
+- When showing tasks, always include: name, status (complete/incomplete), deadline (if set), assigned members
+
+## HANDLING AMBIGUITY
+- If a name is ambiguous (e.g., multiple "Mike"s), ask for clarification with options
+- If a request is unclear, ask a clarifying question rather than guessing
+- If you can't find something, suggest alternative searches or check if they meant something else
+- When fuzzy matching names, confirm: "Did you mean [person] from [subcommittee]?"
+
+## SPECIAL BEHAVIORS
+- When users say "my tasks" or "my meetings", use their Discord ID to identify them
+- When someone completes a task, be encouraging! "Great job finishing that!" (but not over the top)
+- If someone has overdue tasks, gently remind them without being pushy
+- For meeting summaries, highlight action items and decisions prominently
+
+Remember: You're here to make the society run smoothly and help members stay on top of their commitments while also being a fun lively companion!"""
 
 DISCORD_PROXY = os.getenv("DISCORD_PROXY")
 DISCORD_PROXY_NORMALIZED = (
@@ -89,43 +177,116 @@ def create_bot(
 
     # Transcript integrator instance (initialized lazily)
     bot.transcript_integrator = None
+    # Tool executor for database operations (initialized lazily)
+    bot.tool_executor = None
+    
     # In-memory short-term conversation history:
-    # key: (channel_id, user_id) -> list[tuple[role, content]]
-    # role is "user" or "assistant"
-    bot.conversation_history: dict[tuple[int, int], list[tuple[str, str]]] = {}
+    # key: (channel_id, user_id) -> list of message dicts for OpenAI Chat format
+    bot.conversation_history: dict[tuple[int, int], List[Dict[str, Any]]] = {}
 
-    def _build_conversation_input(
-        history: list[tuple[str, str]],
+    async def get_tool_executor():
+        """Get or create the tool executor instance."""
+        if bot.tool_executor is None:
+            from transcript_integrator.database_tools import ToolExecutor
+            bot.tool_executor = ToolExecutor()
+        return bot.tool_executor
+
+    def _build_messages(
+        history: List[Dict[str, Any]],
         user_message: str,
-        max_chars: int = 3000,
-        max_turns: int = 6,
+        max_messages: int = 12,
+    ) -> List[Dict[str, Any]]:
+        """
+        Build message list for OpenAI Chat API.
+        Keeps the last N messages and adds the new user message.
+        """
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        
+        # Add recent history
+        if history:
+            messages.extend(history[-max_messages:])
+        
+        # Add current user message
+        messages.append({"role": "user", "content": user_message})
+        
+        return messages
+
+    async def process_with_tools(
+        messages: List[Dict[str, Any]],
+        user_discord_id: int,
+        max_iterations: int = 5,
     ) -> str:
         """
-        Build a compact conversation transcript for the model.
-
-        We keep only the last `max_turns` (user+assistant pairs) and trim
-        the overall character length from the start if it gets too long.
+        Process a conversation with potential tool calls.
+        Handles multi-turn tool calling until the model gives a final response.
         """
-        if not history:
-            return user_message
-
-        # Keep only the last N turns
-        trimmed_history = history[-(max_turns * 2) :]
-
-        lines: list[str] = []
-        for role, content in trimmed_history:
-            prefix = "User:" if role == "user" else "Assistant:"
-            lines.append(f"{prefix} {content}")
-
-        history_text = "\n".join(lines)
-        if len(history_text) > max_chars:
-            history_text = history_text[-max_chars:]
-
-        return (
-            "Here is the previous conversation between you and the user:\n"
-            f"{history_text}\n\n"
-            f"User: {user_message}\nAssistant:"
-        )
+        from transcript_integrator.database_tools import TOOL_DEFINITIONS
+        
+        tool_executor = await get_tool_executor()
+        iteration = 0
+        
+        while iteration < max_iterations:
+            iteration += 1
+            
+            # Call OpenAI with tools
+            response = await asyncio.to_thread(
+                openai_client.chat.completions.create,
+                model=OPENAI_MODEL,
+                messages=messages,
+                tools=TOOL_DEFINITIONS,
+                tool_choice="auto",
+                max_tokens=1000,
+            )
+            
+            assistant_message = response.choices[0].message
+            
+            # Check if there are tool calls
+            if assistant_message.tool_calls:
+                # Add assistant message with tool calls to conversation
+                messages.append({
+                    "role": "assistant",
+                    "content": assistant_message.content,
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments
+                            }
+                        }
+                        for tc in assistant_message.tool_calls
+                    ]
+                })
+                
+                # Execute each tool call
+                for tool_call in assistant_message.tool_calls:
+                    tool_name = tool_call.function.name
+                    try:
+                        arguments = json.loads(tool_call.function.arguments)
+                    except json.JSONDecodeError:
+                        arguments = {}
+                    
+                    print(f"Executing tool: {tool_name} with args: {arguments}")
+                    
+                    # Execute the tool
+                    result = await tool_executor.execute(
+                        tool_name=tool_name,
+                        arguments=arguments,
+                        user_discord_id=user_discord_id,
+                    )
+                    
+                    # Add tool result to messages
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": result,
+                    })
+            else:
+                # No tool calls - we have a final response
+                return assistant_message.content or "I processed your request."
+        
+        return "I ran into some complexity processing that request. Please try rephrasing."
 
     @bot.event
     async def on_ready() -> None:
@@ -140,7 +301,7 @@ def create_bot(
 
     @bot.event
     async def on_message(message: discord.Message) -> None:
-        """Handle regular messages - AI chat when mentioned."""
+        """Handle regular messages - AI chat with database tools when mentioned."""
         if message.author.bot:
             return
 
@@ -166,47 +327,41 @@ def create_bot(
 
         if not text:
             text = "Hello!"
+        
         # -------- Short-term memory handling --------
-        # Use (channel_id, user_id) as the conversation key so each user has
-        # separate context per channel/DM.
+        # Use (channel_id, user_id) as the conversation key
         key = (message.channel.id, message.author.id)
         history = bot.conversation_history.get(key, [])
-
-        prompt_input = _build_conversation_input(history, text)
-
-        request_kwargs = {
-            "model": OPENAI_MODEL,
-            "instructions": SYSTEM_PROMPT,
-            "input": prompt_input,
-            "max_output_tokens": 500,
-        }
+        
+        # Build messages for API call
+        messages = _build_messages(history, text)
 
         async with message.channel.typing():
             try:
-                response = await asyncio.to_thread(
-                    openai_client.responses.create,
-                    **request_kwargs,
+                # Process with potential tool calls
+                reply = await process_with_tools(
+                    messages=messages,
+                    user_discord_id=message.author.id,
                 )
             except Exception as exc:
-                print(f"OpenAI error: {exc}")
+                print(f"OpenAI/Tool error: {exc}")
+                import traceback
+                traceback.print_exc()
                 await message.channel.send(
-                    "Sorry, I ran into an error talking to the AI."
+                    "Sorry, I ran into an error processing your request."
                 )
                 return
 
-        reply = (response.output_text or "").strip()
         if not reply:
             reply = "Sorry, I didn't get a response."
         if len(reply) > 1900:
             reply = reply[:1900].rstrip() + "..."
 
-        # Update conversation history:
-        # append user message and assistant reply, then trim to last N turns.
-        history.append(("user", text))
-        history.append(("assistant", reply))
-        # Keep only the last 10 messages (5 full turns) in raw store;
-        # _build_conversation_input will trim further if needed.
-        history = history[-10:]
+        # Update conversation history (simplified - just user and assistant messages)
+        history.append({"role": "user", "content": text})
+        history.append({"role": "assistant", "content": reply})
+        # Keep only the last 12 messages (6 full turns)
+        history = history[-12:]
         bot.conversation_history[key] = history
 
         await message.channel.send(reply)

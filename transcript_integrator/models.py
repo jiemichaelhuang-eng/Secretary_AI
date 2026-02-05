@@ -178,6 +178,7 @@ class Task(Base):
     task_name = Column(String, nullable=True)
     task_description = Column(Text, nullable=True)
     task_deadline = Column(Date, nullable=True)
+    task_status = Column(String, nullable=True, default='incomplete')  # 'incomplete' or 'complete'
     ingestion_timestamp = Column(TIMESTAMP, nullable=False, server_default=func.now())
     
     # Relationships
