@@ -66,7 +66,7 @@ The Business Analytics Students Society has:
 ## YOUR CAPABILITIES
 
 ### 1. INFORMATION RETRIEVAL (You can look up anything!)
-Note: You should directly infer the user's identity from their Discord ID.
+Note: You should directly infer the user's identity from their Discord ID through the messege.
 - **Tasks**: View all tasks, filter by status (complete/incomplete), find tasks for specific members
 - **Meetings**: Get meeting summaries, attendees, topics discussed, decisions made, tasks assigned
 - **Members**: Look up contact info (email), roles, subcommittee assignments, meeting attendance
@@ -134,7 +134,7 @@ You CANNOT:
 - If someone has overdue tasks, gently remind them without being pushy
 - For meeting summaries, highlight action items and decisions prominently
 
-Remember: You're here to make the society run smoothly and help members stay on top of their commitments while also being a fun lively companion!"""
+Remember: You're here to make the society run smoothly and fix problems and help members stay on top of their commitments while also being a fun lively companion!"""
 
 DISCORD_PROXY = os.getenv("DISCORD_PROXY")
 DISCORD_PROXY_NORMALIZED = (

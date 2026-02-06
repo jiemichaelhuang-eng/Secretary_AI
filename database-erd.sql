@@ -21,7 +21,7 @@ CREATE TABLE public.meeting (
   CONSTRAINT meeting_pkey PRIMARY KEY (meeting_id)
 );
 CREATE TABLE public.meeting_members (
-  meeting_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  meeting_id bigint NOT NULL,
   member_id bigint NOT NULL,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT meeting_members_pkey PRIMARY KEY (meeting_id, member_id),
@@ -29,15 +29,15 @@ CREATE TABLE public.meeting_members (
   CONSTRAINT MEETING_MEMBERS_member_id_fkey FOREIGN KEY (member_id) REFERENCES public.committee(member_id)
 );
 CREATE TABLE public.meeting_projects (
-  meeting_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+  meeting_id bigint NOT NULL,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
-  project_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+  project_id bigint NOT NULL,
   CONSTRAINT meeting_projects_pkey PRIMARY KEY (meeting_id, project_id),
   CONSTRAINT MEETING_PROJECTS_meeting_id_fkey FOREIGN KEY (meeting_id) REFERENCES public.meeting(meeting_id),
   CONSTRAINT MEETING_PROJECTS_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(project_id)
 );
 CREATE TABLE public.meeting_tasks (
-  meeting_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  meeting_id bigint NOT NULL,
   task_id bigint NOT NULL,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT meeting_tasks_pkey PRIMARY KEY (meeting_id, task_id),
@@ -45,7 +45,7 @@ CREATE TABLE public.meeting_tasks (
   CONSTRAINT MEETING_TASKS_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id)
 );
 CREATE TABLE public.meeting_topics (
-  meeting_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  meeting_id bigint NOT NULL,
   topic_id bigint NOT NULL,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT meeting_topics_pkey PRIMARY KEY (meeting_id, topic_id),
@@ -53,16 +53,16 @@ CREATE TABLE public.meeting_topics (
   CONSTRAINT MEETING_TOPICS_topic_id_fkey FOREIGN KEY (topic_id) REFERENCES public.topic(topic_id)
 );
 CREATE TABLE public.project_members (
-  project_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
-  member_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+  project_id bigint NOT NULL,
+  member_id bigint NOT NULL,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT project_members_pkey PRIMARY KEY (project_id, member_id),
   CONSTRAINT PROJECT_MEMBERS_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(project_id),
   CONSTRAINT PROJECT_MEMBERS_member_id_fkey FOREIGN KEY (member_id) REFERENCES public.committee(member_id)
 );
 CREATE TABLE public.project_tasks (
-  project_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
-  task_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+  project_id bigint NOT NULL,
+  task_id bigint NOT NULL,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT project_tasks_pkey PRIMARY KEY (project_id, task_id),
   CONSTRAINT PROJECT_TASKS_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(project_id),
@@ -76,7 +76,7 @@ CREATE TABLE public.projects (
   CONSTRAINT projects_pkey PRIMARY KEY (project_id)
 );
 CREATE TABLE public.task_members (
-  member_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  member_id bigint NOT NULL,
   task_id bigint NOT NULL,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT task_members_pkey PRIMARY KEY (member_id, task_id),
@@ -84,7 +84,7 @@ CREATE TABLE public.task_members (
   CONSTRAINT TASK_MEMBERS_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id)
 );
 CREATE TABLE public.tasks (
-  task_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  task_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
   task_name character varying,
   task_description text,
   task_deadline date,
@@ -93,7 +93,7 @@ CREATE TABLE public.tasks (
   CONSTRAINT tasks_pkey PRIMARY KEY (task_id)
 );
 CREATE TABLE public.topic (
-  topic_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  topic_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
   topic_name character varying,
   topic_description text,
   ingestion_timestamp timestamp with time zone NOT NULL DEFAULT now(),
