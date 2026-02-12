@@ -4,19 +4,24 @@ An AI-powered Discord bot and meeting transcript integration system for business
 
 ## Features
 
-- **Meeting Transcript Processing**: Automatically extract participants, projects, topics, tasks, and generate summaries from meeting transcripts using GPT-4.1-mini
-- **Task Extraction**: Detect and record explicitly assigned tasks with deadlines and assignees
-- **Fuzzy Matching**: Intelligently match extracted names to existing database records
-- **File Watcher**: Monitor a landing folder for new transcripts with interactive renaming
-- **Discord Integration**: Chat with AI and manage transcripts via Discord slash commands
-- **Async Architecture**: Built for performance with async database operations and API calls
+- **Meeting Transcript Processing**: Automatically extract participants, projects, topics, tasks, and generate summaries from meeting transcripts using GPT-4.1-mini.
+- **Task Extraction**: Detect and record explicitly assigned tasks with deadlines and assignees, linked back to meetings and members.
+- **Fuzzy Matching**: Intelligently match extracted names to existing database records (supports full names, unique first names, and strips a bit of extra “noisy” text).
+- **File Watcher**: Monitor a landing folder for new transcripts with an interactive renaming and routing flow.
+- **Discord Chatbot**: Talk to Secretary AI in Discord to retrieve information (“What are my tasks?”, “Who is Sam Choong?”, “What did I miss?”) and perform allowed updates/creations.
+- **Agentic Tool Use**: The chatbot decides which database tools to call, runs them, and answers based strictly on those results (no raw SQL from the model).
+- **Async Architecture**: Built for performance with async database operations and API calls.
 
 ## Quick Start
 
 ### 1. Install Dependencies
 
+You can use either `pip` or `uv`. If you’re using `uv`, prefer running your app via `uv run` so it uses the right environment.
+
 ```bash
-# Using pip
+# Using pip + venv (recommended)
+python -m venv .venv
+.venv\Scripts\activate  # on Windows
 pip install -r requirements.txt
 
 # Or using uv
@@ -41,11 +46,15 @@ Required environment variables:
 ```bash
 # Start Discord bot
 python main.py bot
+# or with uv
+uv run python main.py bot
 
-# Or start file watcher
+# Start file watcher
 python main.py watch
+# or with uv
+uv run python main.py watch
 
-# Or process a file directly
+# Process a file directly
 python main.py process landing/my_transcript.txt
 ```
 
@@ -61,16 +70,16 @@ python main.py setup        # Create/verify database tables
 python main.py help         # Show help
 ```
 
-### Discord Slash Commands
+### Discord Chat Usage
 
-| Command | Description |
-|---------|-------------|
-| `/process_transcript` | Process a transcript file from the landing folder |
-| `/list_transcripts` | List available transcript files |
-| `/meeting_stats` | View statistics about processed meetings |
-| `/start_watcher` | Information about running the file watcher |
-
-Mention the bot to chat: `@SecretaryAI how do I add a new project?`
+- Mention the bot to chat: `@SecretaryAI ...`
+- Example queries:
+  - `@SecretaryAI what are my current tasks?`
+  - `@SecretaryAI what did I miss in the last full committee meeting?`
+  - `@SecretaryAI who is Michael Huang?`
+  - `@SecretaryAI create a new task to review recruitment email copy, due next Friday, and assign it to me.`
+  - `@SecretaryAI add a project called "O-Week Preparation" and assign it to all executives.`
+  - `@SecretaryAI what time is it right now?`
 
 ## Project Structure
 
@@ -78,11 +87,12 @@ Mention the bot to chat: `@SecretaryAI how do I add a new project?`
 secretary-ai/
 ├── main.py                    # Main entry point
 ├── discord_bot/
-│   └── bot.py                 # Discord bot with slash commands
+│   └── bot.py                 # Discord bot and chat logic
 ├── transcript_integrator/
 │   ├── __init__.py
 │   ├── integrator.py          # Main transcript processing engine
 │   ├── models.py              # SQLAlchemy database models
+│   ├── database_tools.py      # Async database tools used by the chatbot
 │   └── file_watcher.py        # File monitoring and renaming
 ├── landing/                   # Drop transcript files here
 │   ├── executive/
@@ -147,11 +157,11 @@ The system supports the following meeting types:
 
 ### Transcript Processing
 
-1. **Member Extraction**: Identifies participants from the transcript and matches them to committee members using fuzzy matching
-2. **Project Linking**: Detects project mentions and links them to the meeting
-3. **Topic Identification**: Extracts discussion topics, creating new ones if needed
-4. **Task Detection**: Finds explicitly assigned tasks with deadlines and assignees
-5. **Summary Generation**: Creates a comprehensive meeting summary
+1. **Member Extraction**: Identifies participants from the transcript and matches them to committee members using fuzzy matching over full names and first names.
+2. **Project Linking**: Detects project mentions and links them to the meeting.
+3. **Topic Identification**: Extracts discussion topics, linking to existing topics or creating new ones if needed.
+4. **Task Detection**: Finds explicitly assigned tasks with deadlines and assignees (multiple assignees become multiple `task_members` rows).
+5. **Summary Generation**: Creates a comprehensive meeting summary.
 
 ### Fuzzy Matching
 
@@ -216,9 +226,31 @@ The member name in the transcript doesn't closely match any names in the `commit
 ### "asyncpg.exceptions.UndefinedTableError"
 
 The database tables don't exist. Run:
+
 ```bash
 python main.py setup
 ```
+
+### "duplicate key value violates unique constraint ..._pkey"
+
+If you see an error like:
+
+```text
+duplicate key value violates unique constraint "tasks_pkey"
+Key (task_id)=(1) already exists.
+```
+
+the PostgreSQL identity/sequence for that table is out of sync with existing data. You can fix it by resetting the sequence to `MAX(id) + 1`, for example:
+
+```sql
+SELECT setval(
+  pg_get_serial_sequence('public.tasks', 'task_id'),
+  COALESCE((SELECT MAX(task_id) FROM public.tasks), 0) + 1,
+  false
+);
+```
+
+Repeat with the appropriate table/column (e.g. `public.topic` / `topic_id`, `public.meeting` / `meeting_id`) if you see similar errors there.
 
 ### Discord bot not responding
 
