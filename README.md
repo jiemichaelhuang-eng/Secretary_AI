@@ -72,14 +72,14 @@ python main.py help         # Show help
 
 ### Discord Chat Usage
 
-- Mention the bot to chat: `@SecretaryAI ...`
+- Mention the bot to chat: `@Encore ...`
 - Example queries:
-  - `@SecretaryAI what are my current tasks?`
-  - `@SecretaryAI what did I miss in the last full committee meeting?`
-  - `@SecretaryAI who is Michael Huang?`
-  - `@SecretaryAI create a new task to review recruitment email copy, due next Friday, and assign it to me.`
-  - `@SecretaryAI add a project called "O-Week Preparation" and assign it to all executives.`
-  - `@SecretaryAI what time is it right now?`
+  - `@Encore what are my current tasks?`
+  - `@Encore what did I miss in the last full committee meeting?`
+  - `@Encore who is Michael Huang?`
+  - `@Encore create a new task to review recruitment email copy, due next Friday, and assign it to me.`
+  - `@Encore add a project called "O-Week Preparation" and assign it to all executives.`
+  - `@Encore what time is it right now?`
 
 ## Project Structure
 
