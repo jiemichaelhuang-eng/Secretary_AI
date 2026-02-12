@@ -532,3 +532,60 @@ NoneType: None
 2026-02-08 00:26:31,696 - INFO - Created meeting with ID: 6
 2026-02-08 00:26:33,106 - INFO - TranscriptIntegrator closed
 2026-02-08 00:58:03,513 - INFO - File watcher stopped
+2026-02-12 22:24:03,619 - INFO - FileWatcher initialized for: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing
+2026-02-12 22:24:03,624 - INFO - Started watching: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing
+2026-02-12 22:24:09,983 - INFO - New file detected: meeting_saved_closed_caption.txt
+2026-02-12 22:25:18,346 - INFO - File copied: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\meeting_saved_closed_caption.txt -> C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\executive\INGESTED_executive_09-02-2026_pre-semester-executive-kickoff.txt
+2026-02-12 22:25:19,996 - INFO - Original file deleted: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\meeting_saved_closed_caption.txt
+2026-02-12 22:25:25,546 - INFO - TranscriptIntegrator initialized with model: gpt-4.1-mini
+2026-02-12 22:25:25,548 - INFO - Loading context from database...
+2026-02-12 22:25:29,687 - INFO - Loaded 6 members, 1 projects, 7 topics
+2026-02-12 22:25:29,687 - INFO - Processing transcript: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\executive\INGESTED_executive_09-02-2026_pre-semester-executive-kickoff.txt
+2026-02-12 22:25:29,698 - INFO - Extracting meeting information with LLM...
+2026-02-12 22:25:33,106 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:25:40,289 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:25:51,288 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:25:59,564 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:25:59,569 - INFO - Creating new topic: 'Membership fees and funding'
+2026-02-12 22:26:00,081 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:00,434 - INFO - Created task: 'Complete Bystander Intervention and Responding to Disclosures Training' assigned to ['Andy Shang', 'Michael Huang', 'Alex Kartel', 'Sam Choong', 'Raymond Jiang', 'Annalise Kaper']
+2026-02-12 22:26:00,434 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:00,554 - INFO - Created task: 'Organise Project Recruitment Meeting' assigned to ['Alex Kartel', 'Sam Choong', 'Andy Shang']
+2026-02-12 22:26:00,555 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:00,556 - WARNING - No match found for task assignee: Teresa (implied)
+2026-02-12 22:26:00,673 - INFO - Created task: 'Send Monster Energy Sponsorship Email' assigned to ['Sam Choong']
+2026-02-12 22:26:00,673 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:00,793 - INFO - Created task: 'Book Rooms for Recruitment Interviews' assigned to ['Alex Kartel', 'Sam Choong']
+2026-02-12 22:26:00,794 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:00,909 - INFO - Created task: 'Set Up Interview Scheduling Platform' assigned to ['Annalise Kaper', 'Sam Choong', 'Alex Kartel']
+2026-02-12 22:26:00,910 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:01,028 - INFO - Created task: 'Fill in FBE Orientation and Club Event Forms' assigned to ['Sam Choong', 'Annalise Kaper', 'Alex Kartel', 'Michael Huang']
+2026-02-12 22:26:01,146 - INFO - Created task: 'Draft and Send Email Regarding Equipment and Table Requirements' assigned to ['Annalise Kaper']
+2026-02-12 22:26:01,147 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:01,266 - INFO - Created task: 'Organise Summerfest Attendance and Group Chat' assigned to ['Sam Choong', 'Annalise Kaper', 'Alex Kartel']
+2026-02-12 22:26:01,268 - INFO - Fuzzy matched task assignee: 'Samuel Choong' -> 'Sam Choong'
+2026-02-12 22:26:01,387 - INFO - Created task: 'Plan and Schedule Committee Bonding Activity (Bouldering)' assigned to ['Sam Choong', 'Raymond Jiang', 'Alex Kartel', 'Annalise Kaper', 'Andy Shang']
+2026-02-12 22:26:01,505 - INFO - Created task: 'Send Monster Sponsorship Email Copy to Samuel Choong' assigned to ['Alex Kartel']
+2026-02-12 22:26:01,505 - WARNING - No match found for task assignee: Lufei (implied)
+2026-02-12 22:26:01,505 - WARNING - No match found for task assignee: Mei (implied)
+2026-02-12 22:26:01,820 - INFO - Created task: 'Attend Career Expo and Events Meetings' assigned to ['Annalise Kaper']
+2026-02-12 22:26:01,937 - INFO - Created task: 'Have Early Meetings with Directors' assigned to ['Raymond Jiang', 'Andy Shang', 'Alex Kartel']
+2026-02-12 22:26:02,108 - INFO - Created task: 'Join Project Recruitment Meeting to Explain Weekly Tasks' assigned to ['Andy Shang']
+2026-02-12 22:26:02,796 - INFO - Created meeting with ID: 7
+2026-02-12 22:26:04,435 - INFO - TranscriptIntegrator closed
+2026-02-12 22:30:49,161 - INFO - New file detected: 12.02.2026-Events-Meeting-BASS-transcript.txt
+2026-02-12 22:31:41,537 - INFO - File copied: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\12.02.2026-Events-Meeting-BASS-transcript.txt -> C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\events_subcommittee\INGESTED_events_subcommittee_12-02-2026_pre-semester-events-catchup-1.txt
+2026-02-12 22:31:42,354 - INFO - Original file deleted: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\12.02.2026-Events-Meeting-BASS-transcript.txt
+2026-02-12 22:31:43,859 - INFO - TranscriptIntegrator initialized with model: gpt-4.1-mini
+2026-02-12 22:31:43,859 - INFO - Loading context from database...
+2026-02-12 22:31:47,652 - INFO - Loaded 6 members, 1 projects, 8 topics
+2026-02-12 22:31:47,652 - INFO - Processing transcript: C:\Users\andys\Desktop\Hackathon Projects\Secretary_AI\landing\events_subcommittee\INGESTED_events_subcommittee_12-02-2026_pre-semester-events-catchup-1.txt
+2026-02-12 22:31:47,664 - INFO - Extracting meeting information with LLM...
+2026-02-12 22:31:49,141 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:31:55,030 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:31:58,346 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:32:05,725 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-02-12 22:32:06,081 - INFO - Created task: 'Present Event Plan to Executives' assigned to ['Annalise Kaper']
+2026-02-12 22:32:06,565 - INFO - Created meeting with ID: 8
+2026-02-12 22:32:07,755 - INFO - TranscriptIntegrator closed
+2026-02-12 22:46:40,119 - INFO - File watcher stopped

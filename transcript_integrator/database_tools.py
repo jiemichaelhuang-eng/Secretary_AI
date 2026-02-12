@@ -516,10 +516,17 @@ class DatabaseTools:
         Supports:
         - Full name lookups (e.g. "Andy Shang")
         - First name lookups when unique (e.g. "Sam", "Michael")
+        - Noisy strings that include extra commentary, e.g.
+          "Michael Huang (the coolest person in the world!)"
         """
-        key = (name or "").strip().lower()
-        if not key:
+        raw = (name or "").strip()
+        if not raw:
             return None
+        
+        # Strip common trailing commentary in parentheses, etc.
+        cleaned = raw.split("(", 1)[0].strip()
+        cleaned = cleaned.rstrip(",;.-").strip()
+        key = cleaned.lower()
         
         # 1) Exact full-name match
         if key in self._member_cache:
