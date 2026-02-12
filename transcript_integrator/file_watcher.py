@@ -291,8 +291,8 @@ class FileWatcherHandler(FileSystemEventHandler):
         print("\n[3/4] ENTER MEETING NAME")
         print("-" * 40)
         print("  A descriptive name for this meeting")
-        print("  Example: 'sprint_planning' or 'budget_review'")
-        print("  (Spaces will be converted to underscores)")
+        print("  Example: 'sprint-planning' or 'budget-review'")
+        print("  (Spaces will be converted to hyphens)")
         
         while True:
             name_input = input("\nEnter name: ").strip()
@@ -305,15 +305,15 @@ class FileWatcherHandler(FileSystemEventHandler):
                 continue
             
             # Clean the name
-            cleaned = re.sub(r'[^\w\-]', '_', name_input.replace(' ', '_'))
-            cleaned = re.sub(r'_+', '_', cleaned)  # Remove multiple underscores
-            cleaned = cleaned.strip('_').lower()
+            cleaned = re.sub(r'[^\w\-]', '-', name_input.replace(' ', '-'))
+            cleaned = re.sub(r'-+', '-', cleaned)  # Remove multiple hyphens
+            cleaned = cleaned.strip('-').lower()
             
             if cleaned:
                 print(f"  Name accepted: {cleaned}")
                 return cleaned
             
-            print("  Invalid name. Please use letters, numbers, and underscores.")
+            print("  Invalid name. Please use letters, numbers, and hyphens.")
     
     def _get_destination_folder(self, meeting_type: str) -> Optional[str]:
         """Get destination subfolder from user."""

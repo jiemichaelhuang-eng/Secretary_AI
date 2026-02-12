@@ -75,6 +75,18 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
+            "name": "get_current_datetime",
+            "description": "Get the current date and time according to the server where the bot is running.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_my_identity",
             "description": "Identify who the current Discord user is in the Business Analytics Students Society. Returns their name, role, subcommittee, email, and Discord ID.",
             "parameters": {
@@ -461,7 +473,10 @@ class DatabaseTools:
         )
         
         # Cache for member lookup (populated on first use)
+        # _member_cache: full_name_lower -> member dict
+        # _member_first_name_index: first_name_lower -> list[member dict]
         self._member_cache: Dict[str, Dict[str, Any]] = {}
+        self._member_first_name_index: Dict[str, List[Dict[str, Any]]] = {}
         self._cache_loaded = False
     
     async def _ensure_cache(self):
@@ -471,27 +486,54 @@ class DatabaseTools:
         
         async with self.async_session() as session:
             result = await session.execute(
-                select(Committee.member_id, Committee.member_name, Committee.discord_id)
+                select(Committee.member_id, Committee.member_name, Committee.discord_id, Committee.role, Committee.subcommittee, Committee.email)
             )
-            for member_id, name, discord_id in result.fetchall():
-                if name:
-                    self._member_cache[name.lower()] = {
-                        'id': member_id,
-                        'name': name,
-                        'discord_id': discord_id
-                    }
+            for member_id, name, discord_id, role, subcommittee, email in result.fetchall():
+                if not name:
+                    continue
+                
+                member_dict = {
+                    'id': member_id,
+                    'name': name,
+                    'discord_id': discord_id,
+                    'role': role,
+                    'subcommittee': subcommittee,
+                    'email': email,
+                }
+                
+                # Cache by full name
+                self._member_cache[name.lower()] = member_dict
+                
+                # Cache by first name for nicer "who is michael / sam / andy" queries
+                first_name = name.split()[0].lower()
+                self._member_first_name_index.setdefault(first_name, []).append(member_dict)
         self._cache_loaded = True
     
     def _fuzzy_match_member(self, name: str) -> Optional[Dict[str, Any]]:
-        """Fuzzy match a member name to the cache."""
-        key = name.lower()
+        """
+        Fuzzy match a member name to the cache.
         
-        # Exact match
+        Supports:
+        - Full name lookups (e.g. "Andy Shang")
+        - First name lookups when unique (e.g. "Sam", "Michael")
+        """
+        key = (name or "").strip().lower()
+        if not key:
+            return None
+        
+        # 1) Exact full-name match
         if key in self._member_cache:
             return self._member_cache[key]
         
-        # Fuzzy match
-        matches = difflib.get_close_matches(key, self._member_cache.keys(), n=1, cutoff=0.6)
+        # 2) Single-word (first-name-only) queries when unique
+        if " " not in key:
+            first_name_matches = self._member_first_name_index.get(key, [])
+            if len(first_name_matches) == 1:
+                return first_name_matches[0]
+            # If 0 or >1 matches, fall through to fuzzy full-name match
+        
+        # 3) Fuzzy match on full names
+        matches = difflib.get_close_matches(key, list(self._member_cache.keys()), n=1, cutoff=0.6)
         if matches:
             return self._member_cache[matches[0]]
         
@@ -1510,6 +1552,16 @@ class ToolExecutor:
             if not user_discord_id:
                 return {"error": "Cannot identify you. Your Discord account may not be linked."}
             return await self.db_tools.get_my_identity(user_discord_id)
+        
+        elif tool_name == "get_current_datetime":
+            # This tool does not touch the database; just returns server time.
+            now = datetime.now()
+            return {
+                "current_datetime_iso": now.isoformat(),
+                "current_date": now.date().isoformat(),
+                "current_time": now.time().strftime("%H:%M:%S"),
+                "timezone": "server-local",
+            }
         
         elif tool_name == "get_all_tasks":
             return await self.db_tools.get_all_tasks(args.get("status_filter", "all"))
